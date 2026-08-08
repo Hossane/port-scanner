@@ -1,0 +1,3 @@
+/home/vboxuser/Desktop/Port scanner/build/CMakeFiles/simplePortScanner.dir
+/home/vboxuser/Desktop/Port scanner/build/CMakeFiles/edit_cache.dir
+/home/vboxuser/Desktop/Port scanner/build/CMakeFiles/rebuild_cache.dir

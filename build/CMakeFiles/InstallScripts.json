@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/vboxuser/Desktop/Port scanner/build/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
