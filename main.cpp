@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
                                          "set a port range from 1 to n")(
         "threads,t", po::value<int>()->default_value(100), "max concurrent threads")(
         "expiry_time,e", po::value<uint8_t>()->default_value(2)->value_name("sec"),
-        "timeout in seconds")("verbose,v", "verbose output")("output,o", "writes results to CSV");
+        "timeout in seconds")("verbose,v", "verbose output")("output,o", po::value<std::string>(), "writes results to CSV");
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -35,9 +35,10 @@ int main(int argc, char* argv[]) {
     std::string port = vm["ports"].as<std::string>();
     int threads = vm["threads"].as<int>();
     uint8_t expiry_time = vm["expiry_time"].as<uint8_t>();
+    std::string csvName = vm["output"].as<std::string>();
 
     PortScanner scanner;
-    scanner.set_options(ip, port, threads, expiry_time);
+    scanner.set_options(ip, port, threads, expiry_time, csvName);
     scanner.start();
     scanner.run();
 

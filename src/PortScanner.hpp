@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string>
 #include <unordered_map>
+#include <fstream>
 
 #define RED "\033[31m"
 #define GREEN "\033[32m"
@@ -34,6 +35,9 @@ private:
     std::uint16_t endPort = MAX_PORT;
 
     std::uint8_t expiry_time;
+    std::string csvName;
+
+    std::ofstream myFile;
 
     void scan();
     void setup_queue();
@@ -41,14 +45,14 @@ private:
 
 public:
     PortScanner(std::string& ip_address, std::string& port, int max_threads,
-                std::uint8_t expiry_time);
+                std::uint8_t expiry_time, std::string& csvName);
     PortScanner() {
     }
     ~PortScanner() {
     }
 
     void set_options(std::string& domainName, std::string& port, int max_threads,
-                     std::uint8_t expiry_time);
+                     std::uint8_t expiry_time, std::string& csvName);
     void set_max_port(std::uint16_t port);
     void set_max_threads(int value);
     void set_ip_address(std::string ip);

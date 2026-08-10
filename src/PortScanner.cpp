@@ -41,10 +41,11 @@ void PortScanner::parse_port(std::string& port) {
     }
 }
 PortScanner::PortScanner(std::string& domainName, std::string& port, int max_threads,
-                         std::uint8_t expiry_time) {
+                         std::uint8_t expiry_time, std::string& csvName) {
     this->domainName = std::move(domainName);
     this->MAX_THREADS = max_threads;
     this->expiry_time = expiry_time;
+    this->csvName = csvName;
 
     parse_port(port);
     auto result = resolver.resolve(this->domainName, "");
@@ -61,10 +62,11 @@ void PortScanner::setup_queue() {
 }
 
 void PortScanner::set_options(std::string& domainName, std::string& port, int max_threads,
-                              std::uint8_t expiry_time) {
+                              std::uint8_t expiry_time, std::string& csvName) {
     this->domainName = std::move(domainName);
     this->MAX_THREADS = max_threads;
     this->expiry_time = expiry_time;
+    this->csvName = std::move(csvName);
     parse_port(port);
 
     auto result = resolver.resolve(this->domainName, "");
@@ -88,9 +90,12 @@ void PortScanner::set_expiry_time(std::uint8_t value) {
 
 void PortScanner::start() {
     setup_queue();
+    myFile.open(csvName);
+    myFile <<"PORT,STATE,SERVICE,BANNER" << std::endl; 
     for (int i = 0; i < MAX_THREADS; i++) {
         boost::asio::post(strand, [this]() { scan(); });
     }
+    
 }
 
 void PortScanner::run() {
@@ -100,6 +105,7 @@ void PortScanner::run() {
     printf("  Open ports: %d\n", open_ports);
     printf("  Closed ports: %d\n", closed_ports);
     printf("  Filtered ports: %d\n", filtered_ports);
+    myFile.close();
 }
 
 void PortScanner::scan() {
@@ -114,21 +120,26 @@ void PortScanner::scan() {
     auto timer = std::make_shared<boost::asio::steady_timer>(io);
     auto complete = std::make_shared<bool>(false);
 
+    //myFile.open(csvName);
+
+    
     tcp::endpoint target_endpoint(this->endpoint.address(), port);
 
     timer->expires_after(std::chrono::seconds(expiry_time));
-
     timer->async_wait(boost::asio::bind_executor(
         strand, [this, complete, socket, port](boost::system::error_code ec) {
             if (!ec && !*complete) {
                 *complete = true;
                 socket->close();
+		myFile << port << "," << "FILTERED" << "," << "NULL" << "," << "NULL" << std::endl;
+		//myFile.flush();
                 printf("%i\t%s\t%s\t%s\n", port, "FILTERED", "NULL", "NULL");
                 ++filtered_ports;
                 --cnt;
                 scan();
             }
         }));
+
 
     socket->async_connect(target_endpoint,
                           boost::asio::bind_executor(strand, [this, socket, timer, port, complete](
@@ -156,7 +167,9 @@ void PortScanner::scan() {
                                               if (!ec && n > 0) {
                                                   banner->assign(buf->data(), n);
                                               }
-                                              printf("%i\t%sOPEN%s\t%s\t%s\n", port, GREEN, RESET,
+					      myFile << port << "," << "OPEN" << "," << service.c_str() << "," << banner->c_str() << std::endl;
+					      //myFile.flush();
+                                             printf("%i\t%sOPEN%s\t%s\t%s\n", port, GREEN, RESET,
                                                      service.c_str(), banner->c_str());
                                               ++open_ports;
                                               --cnt;
@@ -164,6 +177,8 @@ void PortScanner::scan() {
                                           }));
 
                               } else {
+				  myFile << port << "," << "CLOSED" << "," << service.c_str() << "," << banner->c_str() << std::endl;
+				  //myFile.flush();
                                   printf("%i\t%sCLOSED%s\t%s\t%s\n", port, RED, RESET,
                                          service.c_str(), banner->c_str());
                                   ++closed_ports;
@@ -171,4 +186,6 @@ void PortScanner::scan() {
                                   scan();
                               }
                           }));
+    //myFile.close();
+
 }
